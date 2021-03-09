@@ -1,12 +1,13 @@
+import shutil
+
+from os.path import abspath, relpath
+
 from pathlib import Path
 
 from typing import Tuple
 
-import shutil
 
-from os.path import relpath, abspath
-
-import paths
+import common.paths as paths
 
 
 def get_abs_path(user_input_path: str) -> Path:

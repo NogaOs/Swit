@@ -1,18 +1,18 @@
+import shutil
+
+from datetime import datetime
+
 from pathlib import Path
 
 from typing import List
 
-from datetime import datetime
 
-import shutil
+import common.paths as path_to
 
-
-import paths
-
-from general_funcs import (
-    get_parent, get_image_dir, generate_commit_id, 
-    handle_references_file,
+from common.helper_funcs import (
+    generate_commit_id, get_image_dir, get_parent, handle_references_file
 )
+
 
 def get_cur_date_and_timezone() -> str:
     """Returns the current date and a timezone stamp. 
@@ -25,7 +25,7 @@ def get_cur_date_and_timezone() -> str:
 
 
 def get_image_file(commit_id: str) -> Path:
-    return paths.images / f"{commit_id}.txt"
+    return path_to.images / f"{commit_id}.txt"
 
 
 def create_metadata_file(path_to_metadata_file, message: str, parent: str) -> None:
@@ -39,13 +39,13 @@ def create_metadata_file(path_to_metadata_file, message: str, parent: str) -> No
 
 
 def clear_changes_to_be_committed() -> None:
-    with open(paths.changes_to_be_committed, "w") as f:
+    with open(path_to.changes_to_be_committed, "w") as f:
         f.write("")
 
 
 def add_to_parents_file(commit_id: str, parents) -> None:
     """parents.txt contains all of the commit ids, and their parent(s)."""
-    with open(paths.parents, "a") as f:
+    with open(path_to.parents, "a") as f:
         f.write(f"{commit_id}={parents}\n")
 
 
@@ -58,7 +58,7 @@ def inner_commit(user_message, commit_id=generate_commit_id(), parents=None) -> 
     image_dir_path.mkdir()
     create_metadata_file(metadata_path, user_message, parents)
     # Copy the content of staging_area into the new image dir:
-    shutil.copytree(paths.staging_area, image_dir_path, dirs_exist_ok=True)
+    shutil.copytree(path_to.staging_area, image_dir_path, dirs_exist_ok=True)
     # Update references.txt, parents.txt, and changes_to_be_committed.txt
     handle_references_file(commit_id)
     add_to_parents_file(commit_id, parents)

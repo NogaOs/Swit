@@ -1,38 +1,32 @@
-from pathlib import Path
-
-from typing import Tuple, Set, List
-
-import shutil
-
 import os
 
 import re
 
+import shutil
 
-import paths
+from pathlib import Path
 
-from general_funcs import (
-    get_all_filepaths, get_files_with_different_content
+from typing import List, Set, Tuple
+
+
+import common.paths as path_to
+
+from common.helper_funcs import (
+    get_all_filepaths, get_files_with_different_content,
+    get_head_id
 )
-
-
 
 
 def get_org_and_added_files() -> Tuple[Set[Path], Set[Path]]:
     """Recieves the path to repository, and createes the path to staging_area and the last committed dir.
     Returns a tuple of lists with the filepaths of each dir."""
-    original_files = get_all_filepaths(paths.repo)
-    added_files = get_all_filepaths(paths.staging_area)
+    original_files = get_all_filepaths(path_to.repo)
+    added_files = get_all_filepaths(path_to.staging_area)
     return original_files, added_files
 
 
-# def get_difference(filepaths1: set, filepaths2: set) -> set:
-#     """Returns all filepaths that exist in dir1, but not in dir2."""
-#     return filepaths1 - filepaths2
-
-
 def get_changes_to_be_committed() -> List[str]:
-    with open(paths.changes_to_be_committed, "r") as f:
+    with open(path_to.changes_to_be_committed, "r") as f:
         lines = f.readlines()
     return lines
 
@@ -40,7 +34,7 @@ def get_changes_to_be_committed() -> List[str]:
 def get_status_data(head_id: str) -> Tuple[List[str], List[str], Set[str]]:
     original_files, added_files = get_org_and_added_files()
     changes_not_staged_for_commit = get_files_with_different_content(
-        paths.repo, paths.staging_area, original_files.intersection(added_files)
+        path_to.repo, path_to.staging_area, original_files.intersection(added_files)
     )
     changes_to_be_committed = get_changes_to_be_committed()
     untracked_files = original_files - added_files
@@ -49,7 +43,8 @@ def get_status_data(head_id: str) -> Tuple[List[str], List[str], Set[str]]:
 
 
 def print_status(
-    HEAD, changes_to_be_committed, changes_not_staged_for_commit, untracked_files
+    HEAD: str, changes_to_be_committed: List[str], 
+    changes_not_staged_for_commit: List[str], untracked_files: List[str]
 ) -> None:
     print("-" * 60)
     print(f"\n>>> HEAD: {HEAD}.")
@@ -72,3 +67,9 @@ def print_status(
     else:
         print("No current untracked files.")
     print("\n" + "-" * 60)
+
+
+def inner_status() -> None:
+    head_id = get_head_id()
+    data = get_status_data(head_id)
+    print_status(head_id, *data)

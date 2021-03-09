@@ -1,28 +1,29 @@
+import os
+
+import random
+
+import re
+
+import shutil
+
+from filecmp import cmp
+
 from pathlib import Path
 
 from typing import List, Set
 
-import paths
 
-import random
+import common.paths as path_to
 
-import os
+from common.exceptions import CommitIdError
 
-import shutil
-
-import re
-
-from filecmp import cmp
-
-
-from exceptions import CommitIdError
 
 
 
 # Paths:
 
 def get_image_dir(commit_id: str) -> Path:
-    return paths.images / commit_id
+    return path_to.images / commit_id
 
 
 def get_all_filepaths(p: Path) -> Set[Path]:
@@ -68,13 +69,13 @@ def resolve_commit_id(user_input: str) -> str:
 
 def get_head_id() -> str:
     """Gets the wanted info, by index. HEAD=0, master=1, branch names will start from 2."""
-    with open(paths.references, "r") as f:
+    with open(path_to.references, "r") as f:
         lines = f.readlines()
     return lines[0].split("=")[1].strip()
 
 
 def get_parent():  # Type annotations?
-    return get_head_id() if paths.references.exists() else None
+    return get_head_id() if path_to.references.exists() else None
 
 
 
@@ -119,7 +120,7 @@ def get_files_with_different_content(
 
 def get_active_branch_name() -> str:
     """Returns the content of `activated.txt`."""
-    with open(paths.active_branch, "r") as f:
+    with open(path_to.active_branch, "r") as f:
         active_branch_name = f.read()
     return active_branch_name
 
@@ -160,7 +161,7 @@ def get_commit_id_of_branch(user_input: str) -> str:
     If the branch is found, returns the commit_id of the branch;
     else, returns an empty string (may happen if the user used a commit_id as a parameter).
     """
-    with open(paths.references, "r") as f:
+    with open(path_to.references, "r") as f:
         lines = f.readlines()
 
     for line in lines:
@@ -177,11 +178,11 @@ def handle_references_file(commit_id: str) -> None:
     """Checks is the id of HEAD and the active branch are the same.
     If they aren't, only HEAD's id changes. If they are, they both change.
     """
-    if not paths.references.exists():
+    if not path_to.references.exists():
         lines = f"HEAD={commit_id}\nmaster={commit_id}\n"
 
     else:
-        with open(paths.references, "r") as f:
+        with open(path_to.references, "r") as f:
             lines = f.readlines()
 
         branch_index = get_branch_index(lines)
@@ -192,11 +193,11 @@ def handle_references_file(commit_id: str) -> None:
             branch_name = lines[branch_index].split("=")[0]
             lines[branch_index] = f"{branch_name}={commit_id}\n"
 
-    with open(paths.references, "w") as f:
+    with open(path_to.references, "w") as f:
         f.write("".join(lines))
 
 def add_branch_name_to_references(branch_name: str) -> None:
     head = get_head_id()
-    with open(paths.references, "a") as f:
+    with open(path_to.references, "a") as f:
         f.write(f"{branch_name}={head}\n")
 

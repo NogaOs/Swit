@@ -1,14 +1,16 @@
 import os
 
-from pathlib import Path
-
 from glob import glob
 
-from sys import exit, argv
+from pathlib import Path
 
-from exceptions import WitDirectoryNotFoundError
+from sys import argv, exit
+
 
 from loguru import logger
+
+
+from common.exceptions import WitDirectoryNotFoundError
 
 
 def is_init() -> bool:
@@ -19,7 +21,7 @@ def is_init() -> bool:
 
 def get_uppermost_dir(cwd: Path) -> Path:
     """Returns the root directory.
-    Example: `C:\` fow windows, `/`(?) for Linux.
+    Example: `C:\\` fow windows, `/`(?) for Linux.
     """
     cur_path = cwd.parent
     parent = cur_path.parent
@@ -45,13 +47,14 @@ def get_repo_path(cwd: Path) -> Path:
 
 cwd = Path(os.getcwd())
 
-# Makes the program fail if repo not found, in any func call except for `init`.
+# Program will fail if repo not found, in any command except for `init`.
 if not is_init():
     try:
         repo = get_repo_path(cwd)
     except WitDirectoryNotFoundError as e:
         logger.critical(e)
         exit()
+
 
     wit_repo = repo / ".wit"
 

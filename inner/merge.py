@@ -1,43 +1,38 @@
-from pathlib import Path
-
-from typing import List, Tuple, Dict, Set
-
 import shutil
 
+from pathlib import Path
 
-import paths
-
-from exceptions import ImpossibleMergeError
-
-import general_funcs as gf
-
-from inner_commit import inner_commit, generate_commit_id
-
-from inner_graph import (
-    get_parent_file_content, get_parents_of_image_dict
-)
+from typing import Dict, List, Set, Tuple
 
 
+import common.helper_funcs as helper
+
+import common.paths as path_to
+
+from common.exceptions import ImpossibleMergeError
+
+from inner.commit import generate_commit_id, inner_commit
+
+from inner.graph import get_parent_file_content, get_parents_of_image_dict
 
 
 
-
-def is_merge_possible(path_to_head_dir) -> bool:
+def is_merge_possible(head_dir_path: Path) -> bool:
     """`merge()` will fail to execute if the content of staging_area is different from the content of the HEAD image.
     Returns a boolean value of if files were either added or changed."""
-    head_files = gf.get_all_filepaths(path_to_head_dir)
-    staging_area_files = gf.get_all_filepaths(paths.staging_area)
+    head_files = helper.get_all_filepaths(head_dir_path)
+    staging_area_files = helper.get_all_filepaths(path_to.staging_area)
 
     return not (
         head_files.symmetric_difference(staging_area_files)
-        or any(get_changed_files(path_to_head_dir, paths.staging_area))
-    )  # TODO: unsure
+        or any(get_changed_files(head_dir_path, path_to.staging_area))
+    )
 
 
-def get_commit_ids(user_input) -> Tuple[str, str, str]:
+def get_commit_ids(user_input: str) -> Tuple[str, str, str]:
     """Returns the commit id of HEAD, of the chosen image, and common parent image."""
-    head_commit_id = gf.get_head_id()
-    user_commit_id = gf.resolve_commit_id(user_input)
+    head_commit_id = helper.get_head_id()
+    user_commit_id = helper.resolve_commit_id(user_input)
     common_base_id = get_first_mutual_parent(head_commit_id, user_commit_id)
     return head_commit_id, user_commit_id, common_base_id
 
@@ -76,40 +71,42 @@ def get_first_mutual_parent(head_commit_id: str, user_commit_id: str) -> str:
 def get_changed_files(since_dir: Path, until_dir: Path) -> Tuple[list, list]:
     """Returns files that were added and files that were changed, between dir a and dir b.
     When called through `merge()`, the returned files are since the first mutual parent,
-    until the user dir \ head dir.
+    until the user dir or head dir.
     """
-    since_dir_files = gf.get_all_filepaths(since_dir)
-    until_dir_files = gf.get_all_filepaths(until_dir)
+    since_dir_files = helper.get_all_filepaths(since_dir)
+    until_dir_files = helper.get_all_filepaths(until_dir)
     added_files = until_dir_files - since_dir_files
     mutual_files = until_dir_files.intersection(since_dir_files)
-    changed_files = gf.get_files_with_different_content(since_dir, until_dir, mutual_files)
+    changed_files = helper.get_files_with_different_content(since_dir, until_dir, mutual_files)
     return added_files, changed_files
 
 
 def update_staging_area(path_to_user_dir, added_files, changed_files) -> None:
-    gf.copy_changed_files(path_to_user_dir, paths.staging_area, added_files)
-    gf.copy_changed_files(
-        path_to_user_dir, paths.staging_area, changed_files, replace=True
+    helper.copy_changed_files(path_to_user_dir, path_to.staging_area, added_files)
+    helper.copy_changed_files(
+        path_to_user_dir, path_to.staging_area, changed_files, replace=True
     )
 
 
-def update_head_and_active_branch(new_commit_id) -> None:
+def update_head_and_active_branch(new_commit_id: str) -> None:
     """After a merge has been executed, the HEAD and the active branch are updated with the new commit ID."""
-    with open(paths.references, "r") as f:
+    with open(path_to.references, "r") as f:
         lines = f.readlines()
 
     lines[0] = f"HEAD={new_commit_id}\n"
-    active_branch_name = gf.get_active_branch_name()
+    active_branch_name = helper.get_active_branch_name()
 
     if active_branch_name:
-        i = gf.get_branch_index(lines, active_branch_name)
+        i = helper.get_branch_index(lines, active_branch_name)
         lines[i] = f"{active_branch_name}={new_commit_id}\n"
 
-    with open(paths.references, "w") as f:
+    with open(path_to.references, "w") as f:
         f.write("".join(lines))
 
 
-def get_commit_merge_message(head_commit_id, user_commit_id, user_input) -> str:
+def get_commit_merge_message(
+    head_commit_id: str, user_commit_id: str, user_input: str
+) -> str:
     """Shortens the commit ids and adds them to a commit message;
     if user used a branch name, the latter will appear next to the id.
     Example: `Merged 123456 (HEAD) with 654321` (<branch_name>).
@@ -123,7 +120,10 @@ def get_commit_merge_message(head_commit_id, user_commit_id, user_input) -> str:
     return commit_message
 
 
-def commit_merge(new_commit_id, head_commit_id, user_commit_id, user_input) -> None:
+def commit_merge(
+    new_commit_id: str, head_commit_id: str, user_commit_id: str, 
+    user_input: str
+) -> None:
     commit_message = get_commit_merge_message(
         head_commit_id, user_commit_id, user_input
     )
@@ -137,20 +137,20 @@ def commit_merge(new_commit_id, head_commit_id, user_commit_id, user_input) -> N
 def get_merge_paths(user_input: str):
     """Returns the commit id and image path of the user image, HEAD, and their first mutual parent."""
     # Head:
-    head_commit_id = gf.get_head_id()
-    head_dir_path = gf.get_image_dir(head_commit_id)
+    head_commit_id = helper.get_head_id()
+    head_dir_path = helper.get_image_dir(head_commit_id)
     # User Image:
-    user_commit_id, user_dir_path = gf.get_image_data(user_input)
+    user_commit_id, user_dir_path = helper.get_image_data(user_input)
     # Common Base Image:
     common_base_id = get_first_mutual_parent(head_commit_id, user_commit_id)
-    common_base_dir_path = gf.get_image_dir(common_base_id)
+    common_base_dir_path = helper.get_image_dir(common_base_id)
 
     return (
         head_commit_id,
         user_commit_id,
         head_dir_path,
         user_dir_path,
-        common_base_dir_path,
+        common_base_dir_path
     )
 
 

@@ -2,7 +2,8 @@ from pathlib import Path
 
 from typing import Tuple
 
-from paths import cwd
+
+from common.paths import cwd
 
 
 def create_init_files(repo_path: Path, sub_directory_names: Tuple[str, str]) -> None:

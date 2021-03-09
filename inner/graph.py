@@ -1,22 +1,22 @@
-from pathlib import Path
-
-from typing import Tuple, List, Dict
-
 from collections import defaultdict
 
-from matplotlib import pyplot as plt
+from pathlib import Path
+
+from typing import Dict, List, Tuple
 
 import networkx as nx
 
+from matplotlib import pyplot as plt
 
-import paths
 
-from general_funcs import get_head_id
+from common.paths import parents as parents_path
+
+from common.helper_funcs import get_head_id
 
 
 
 def get_parent_file_content() -> List[str]:
-    with open(paths.parents, "r") as f:
+    with open(parents_path, "r") as f:
         lines = f.readlines()
     return lines
 

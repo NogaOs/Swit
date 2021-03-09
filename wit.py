@@ -3,27 +3,27 @@ import sys
 from loguru import logger
 
 
-import paths
+import inner.checkout as ck
 
-from exceptions import ImpossibleMergeError, WitDirectoryNotFoundError, CommitIdError
-
-from general_funcs import (
-    get_head_id, add_branch_name_to_references
+from common.exceptions import (
+    CommitIdError, ImpossibleMergeError, WitDirectoryNotFoundError
 )
 
-from inner_init import inner_init
+from common.helper_funcs import (
+    add_branch_name_to_references, get_head_id, get_image_data
+)
 
-from inner_add import inner_add, get_abs_path
+from inner.add import get_abs_path, inner_add
 
-from inner_commit import inner_commit
+from inner.commit import inner_commit
 
-from inner_status import print_status, get_status_data
+from inner.graph import inner_graph
 
-import inner_checkout as ck
+from inner.init import inner_init
 
-from inner_graph import inner_graph
+from inner.merge import get_merge_paths, inner_merge
 
-from inner_merge import inner_merge, get_merge_paths
+from inner.status import inner_status
 
 
 
@@ -67,9 +67,7 @@ def commit():
 
 
 def status() -> None:
-    head_id = get_head_id()
-    data = get_status_data(head_id)
-    print_status(head_id, *data)
+    inner_status()
 
 
 def checkout():
@@ -82,7 +80,7 @@ def checkout():
         return False
 
     try:
-        image_commit_id, image_dir_path = ck.get_image_data(user_input)
+        image_commit_id, image_dir_path = get_image_data(user_input)
     except CommitIdError as e:
         logger.error(e)
         return False
