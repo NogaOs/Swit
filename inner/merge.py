@@ -19,9 +19,10 @@ from inner.graph import get_parent_file_content, get_parents_of_image_dict
 
 def is_merge_possible(head_dir_path: Path) -> bool:
     """`merge()` will fail to execute if the content of staging_area is different from the content of the HEAD image.
-    Returns a boolean value of if files were either added or changed."""
-    head_files = helper.get_all_filepaths(head_dir_path)
-    staging_area_files = helper.get_all_filepaths(path_to.staging_area)
+    Returns a boolean value of if files were either added or changed.
+    """
+    head_files = helper.get_relpaths(head_dir_path)
+    staging_area_files = helper.get_relpaths(path_to.staging_area)
 
     return not (
         head_files.symmetric_difference(staging_area_files)
@@ -73,8 +74,8 @@ def get_changed_files(since_dir: Path, until_dir: Path) -> Tuple[list, list]:
     When called through `merge()`, the returned files are since the first mutual parent,
     until the user dir or head dir.
     """
-    since_dir_files = helper.get_all_filepaths(since_dir)
-    until_dir_files = helper.get_all_filepaths(until_dir)
+    since_dir_files = helper.get_relpaths(since_dir)
+    until_dir_files = helper.get_relpaths(until_dir)
     added_files = until_dir_files - since_dir_files
     mutual_files = until_dir_files.intersection(since_dir_files)
     changed_files = helper.get_files_with_different_content(since_dir, until_dir, mutual_files)

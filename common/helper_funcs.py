@@ -10,7 +10,7 @@ from filecmp import cmp
 
 from pathlib import Path
 
-from typing import List, Set
+from typing import List, Set, Tuple
 
 
 import common.paths as path_to
@@ -26,20 +26,21 @@ def get_image_dir(commit_id: str) -> Path:
     return path_to.images / commit_id
 
 
-def get_all_filepaths(p: Path) -> Set[Path]:
-    """Get the relative path of all files, starting from the repository.
-    The relative path should be identical within the repo, staging_area, and the committed folder.
+def get_relpaths(p: Path, ignore_wit=False, only_files=True) -> Set[Path]:
+    """Get the relative path of all files (not dirs), starting from a given dir.
+    The relative path should be identical within the repo, staging_area, and the image dir.
+    `ignore_wit` is True when used on the repository.
     """
-    all_files = []
-    for root, _, files in os.walk(p):
-        rel_path = os.path.relpath(root, p)
-        if not rel_path.startswith(".wit"):  # Probably not the best way
-            for f in files:
-                all_files.append(Path(rel_path) / f)
-    return set(all_files)
+    entries = set(p.rglob("*"))
+    if ignore_wit:
+        entries.remove(path_to.wit_repo)
+        entries = entries - set(p.rglob("*.wit/**/*"))
+    if only_files:
+        return {x.relative_to(p) for x in entries if x.is_file()}
+    return {x.relative_to(p) for x in entries}
 
 
-def get_image_data(user_input: str):
+def get_image_data(user_input: str) -> Tuple[str, Path]:
     """Returns the path to the image dir based on the user input (branch or commit id).
     If the dir does not exist, it means that the user's input is problematic, and a CommitIdError is thrown.
     """

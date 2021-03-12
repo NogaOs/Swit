@@ -11,18 +11,18 @@ from typing import List, Set, Tuple
 
 import common.paths as path_to
 
+from common.exceptions import ImpossibleStatusError
+
 from common.helper_funcs import (
-    get_all_filepaths, get_files_with_different_content,
+    get_relpaths, get_files_with_different_content,
     get_head_id
 )
 
 
-def get_org_and_added_files() -> Tuple[Set[Path], Set[Path]]:
-    """Recieves the path to repository, and createes the path to staging_area and the last committed dir.
-    Returns a tuple of lists with the filepaths of each dir."""
-    original_files = get_all_filepaths(path_to.repo)
-    added_files = get_all_filepaths(path_to.staging_area)
-    return original_files, added_files
+# def get_org_and_added_files() -> Tuple[Set[Path], Set[Path]]:
+#     """Recieves the path to repository, and createes the path to staging_area and the last committed dir.
+#     Returns a tuple of lists with the filepaths of each dir."""
+#     return original_files, added_files
 
 
 def get_changes_to_be_committed() -> List[str]:
@@ -32,7 +32,8 @@ def get_changes_to_be_committed() -> List[str]:
 
 
 def get_status_data(head_id: str) -> Tuple[List[str], List[str], Set[str]]:
-    original_files, added_files = get_org_and_added_files()
+    original_files = get_relpaths(path_to.repo, ignore_wit=True)
+    added_files = get_relpaths(path_to.staging_area)    
     changes_not_staged_for_commit = get_files_with_different_content(
         path_to.repo, path_to.staging_area, original_files.intersection(added_files)
     )
@@ -70,6 +71,11 @@ def print_status(
 
 
 def inner_status() -> None:
-    head_id = get_head_id()
+    try:
+        head_id = get_head_id()
+    except FileNotFoundError:
+        raise ImpossibleStatusError(
+            "Must commit at least once before executing status."
+        )
     data = get_status_data(head_id)
     print_status(head_id, *data)
