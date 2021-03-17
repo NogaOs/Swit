@@ -35,8 +35,10 @@ def get_relpaths(p: Path, ignore_wit=False, only_files=True) -> Set[Path]:
     if ignore_wit:
         entries.remove(path_to.wit_repo)
         entries = entries - set(p.rglob("*.wit/**/*"))
+
     if only_files:
         return {x.relative_to(p) for x in entries if x.is_file()}
+
     return {x.relative_to(p) for x in entries}
 
 
@@ -69,7 +71,7 @@ def resolve_commit_id(user_input: str) -> str:
 
 
 def get_head_id() -> str:
-    """Gets the wanted info, by index. HEAD=0, master=1, branch names will start from 2."""
+    """Returns the commit id of HEAD."""
     with open(path_to.references, "r") as f:
         lines = f.readlines()
     return lines[0].split("=")[1].strip()
@@ -83,36 +85,39 @@ def get_parent():  # Type annotations?
 # Files:
 
 def copy_changed_files(
-    path_from: Path, path_to: Path, changed_files: list, replace=False
+    path_from: Path, path_to: Path, changed_files: Set[Path], replace=False
 ) -> None:
     """Given paths to two dirs and a list of files who've been changed, replaces the files from dir1 with their version from dir2.
     When called from `checkout()`, replaces all of the committed files in the repository with their version in the specified commit id (untracked files remain unchanged).
     When called from `merge()`, replaces or adds files in staging_area with files that were either changed or added since the common base dir until the user input dir.
-    Doesn't support moving, renaming or deleting files, yet."""
-    for relpath_to_file in changed_files:
-        abs_path_to_be_replaced = path_to / relpath_to_file
-        abs_path_to_be_copied = path_from / relpath_to_file
-        # Getting the relative path first is important, to not get any `.wit` files. I think.
-        if replace:
-            abs_path_to_be_replaced.unlink()  # originally os.remove
-        shutil.copy2(abs_path_to_be_copied, abs_path_to_be_replaced)
+    Doesn't support moving, renaming or deleting files, yet.
+    """
+    for fp in changed_files:
+        source = path_from / fp
+        dest = path_to / fp
+        hierarchy = dest.parent
+        if not hierarchy.exists():
+            hierarchy.mkdir(parents=True)
+        # if replace:
+        #     dest.unlink()  # originally os.remove
+        print(f">> trying to copy `{source}` to {dest}")
+        shutil.copy2(source, hierarchy)  # or dest?
 
 
 def get_files_with_different_content(
     path_to_dir1: Path, path_to_dir2: Path, mutual_files: Set[Path]
-) -> list:
+) -> Set[Path]:
     """Joins the relative path of each file and compares its content. Returns a list of filepaths with different content.
     Mutual files must be mutual to both dirs.
     When called through `status()`, gets all relative paths to files from the repository and from staging area, thus returning changes not staged for commit.
     When called through `merge()`, gets all relative paths to files from the branch or commit id the user has entered, and the first mutual parent of the latter and of HEAD."""
-    files_with_different_content = []
-    for relpath in mutual_files:
-        relpath = re.sub(r"^\.\\", "", str(relpath))
-        # this is bad, m'kay? but I don't remember what we said about it
-        first_dir_path = path_to_dir1 / relpath
-        second_dir_path = path_to_dir2 / relpath
-        if not cmp(first_dir_path, second_dir_path):
-            files_with_different_content.append(relpath)
+    files_with_different_content = set()
+    for fp in mutual_files:
+        # fp = re.sub(r"^\.\\", "", str(fp))
+        p1 = path_to_dir1 / fp
+        p2 = path_to_dir2 / fp
+        if not cmp(p1, p2):
+            files_with_different_content.add(fp)
     return files_with_different_content
 
 
