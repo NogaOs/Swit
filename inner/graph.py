@@ -9,14 +9,14 @@ import networkx as nx
 from matplotlib import pyplot as plt
 
 
-from common.paths import parents as parents_path
+import common.paths as path_to
 
 from common.helper_funcs import get_head_id
 
 
 
 def get_parent_file_content() -> List[str]:
-    with open(parents_path, "r") as f:
+    with open(path_to.parents, "r") as f:
         lines = f.readlines()
     return lines
 

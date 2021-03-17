@@ -5,9 +5,7 @@ from loguru import logger
 
 import inner.checkout as ck
 
-from common.exceptions import (
-    CommitIdError, ImpossibleMergeError, WitDirectoryNotFoundError
-)
+import common.exceptions as err
 
 from common.helper_funcs import (
     add_branch_name_to_references, get_head_id, get_image_data
@@ -67,12 +65,16 @@ def commit():
 
 
 def status() -> None:
-    inner_status()
+    try:
+        inner_status()
+    except err.ImpossibleStatusError as e:
+        logger.error(e)
+        return False
 
 
 def checkout():
     try:
-        user_input = sys.argv[2]
+        user_input = sys.argv[2]  # TODO: deleted an untracked file
     except IndexError:
         logger.error(
             "Usage: <python> <path/to/wit.py> <checkout> <branch name OR commit id>"
@@ -81,19 +83,20 @@ def checkout():
 
     try:
         image_commit_id, image_dir_path = get_image_data(user_input)
-    except CommitIdError as e:
+    except err.CommitIdError as e:
         logger.error(e)
         return False
 
     try:
-        if not ck.is_checkout_possible(image_dir_path):
-            ck.print_impossible_checkout_message()
-            return False
+        ck.inner_checkout(user_input, image_commit_id, image_dir_path)
+    except err.ImpossibleCheckoutError:
+        # The error is being handled within `inner_checkout`.
+        return False
     except FileNotFoundError as e:
         logger.error(e)
         return False
 
-    ck.inner_checkout(user_input, image_commit_id, image_dir_path)
+    
     logger.info(">>> Checkout Executed Successfully.")
 
 
@@ -120,7 +123,7 @@ def branch():
     logger.info(">>> Branch added.")
 
 
-def merge():
+def merge():  # TODO: didn't workkkkk
     try:
         user_input = sys.argv[2]
     except IndexError:
@@ -129,13 +132,13 @@ def merge():
 
     try:
         paths = get_merge_paths(user_input)
-    except CommitIdError as e:
+    except err.CommitIdError as e:
         logger.error(e)
         return False
 
     try:
         inner_merge(user_input, *paths)
-    except ImpossibleMergeError as e:
+    except err.ImpossibleMergeError as e:
         logger.error(e)
         return False
 
