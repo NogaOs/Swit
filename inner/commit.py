@@ -49,9 +49,9 @@ def add_to_parents_file(commit_id: str, parents) -> None:
         f.write(f"{commit_id}={parents}\n")
 
 
-def inner_commit(user_message, commit_id=generate_commit_id(), parents=None) -> None:
+def inner_commit(user_message, commit_id=generate_commit_id(), parents=None, is_merge=False) -> None:
     """Creates the image dir and metadata file; updates all relevant files."""
-    parents = parents if parents else get_parent()
+    parents = parents or get_parent()
     metadata_path = get_image_file(commit_id)
     image_dir_path = get_image_dir(commit_id)
     # Create the image dir and file:
@@ -60,6 +60,6 @@ def inner_commit(user_message, commit_id=generate_commit_id(), parents=None) -> 
     # Copy the content of staging_area into the new image dir:
     shutil.copytree(path_to.staging_area, image_dir_path, dirs_exist_ok=True)
     # Update references.txt, parents.txt, and changes_to_be_committed.txt
-    handle_references_file(commit_id)
+    handle_references_file(commit_id, is_merge)
     add_to_parents_file(commit_id, parents)
     clear_changes_to_be_committed()

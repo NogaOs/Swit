@@ -93,17 +93,17 @@ def inner_checkout(user_input, image_commit_id, image_dir_path):
     updating activated.txt, and then references.txt.
     """
     head_id = get_head_id()
-    to_be_committed, not_staged, untracked = status.get_status_data(head_id)
+    info = status.get_status_info(head_id)
     # Raise error if checkout is impossible:
-    if not is_checkout_possible(image_dir_path, to_be_committed, not_staged):
+    if not is_checkout_possible(image_dir_path, info["Changes to Be Committed"], info["Changes Not Staged for Commit"]):
         logger.error(
             "Please make sure that 'Changes to Be Committed' and 'Changes Not Staged for Commit' are empty:"
             )
-        status.print_status(head_id, to_be_committed, not_staged, untracked)
+        status.print_status(head_id, info)
         raise ImpossibleCheckoutError
     # Remove all repo content, except for .wit dir and untracked files; 
     # copy the content of chosen image to repo
-    remove_except(untracked)
+    remove_except(info["Untracked Files"])
     shutil.copytree(image_dir_path, path_to.repo, dirs_exist_ok=True)
     # Replace the content of staging_area with chosen image
     replace_staging_area_with_image(image_dir_path)
