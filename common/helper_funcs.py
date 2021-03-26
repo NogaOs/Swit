@@ -1,32 +1,24 @@
 import os
-
 import random
-
 import re
-
 import shutil
-
 from filecmp import cmp
-
 from pathlib import Path
-
-from typing import List, Set, Tuple
-
+from typing import List, Set, Tuple, Optional
 
 import common.paths as path_to
-
-from common.exceptions import CommitIdError
-
-
-
+from common.exceptions import CommitIdError, BranchNameExistsError
 
 # Paths:
+
 
 def get_image_dir(commit_id: str) -> Path:
     return path_to.images / commit_id
 
 
-def get_relpaths(p: Path, ignore_wit=False, only_files=True) -> Set[Path]:
+def get_relpaths(
+    p: Path, ignore_wit: bool = False, only_files: bool = True
+) -> Set[Path]:
     """Get the relative path of all files (not dirs), starting from a given dir.
     The relative path should be identical within the repo, staging_area, and the image dir.
     `ignore_wit` is True when used on the repository.
@@ -43,8 +35,9 @@ def get_relpaths(p: Path, ignore_wit=False, only_files=True) -> Set[Path]:
 
 
 def get_image_data(user_input: str) -> Tuple[str, Path]:
-    """Returns the path to the image dir based on the user input (branch or commit id).
-    If the dir does not exist, it means that the user's input is problematic, and a CommitIdError is thrown.
+    """Returns the path to the image dir, based on the user input (branch or commit id).
+    If the dir does not exist, it means that the user's input is problematic, 
+    and a CommitIdError is thrown.
     """
     commit_id = resolve_commit_id(user_input)
     dir_path = get_image_dir(commit_id)
@@ -55,39 +48,40 @@ def get_image_data(user_input: str) -> Tuple[str, Path]:
     return commit_id, dir_path
 
 
-
 # Commit Id:
 
-def generate_commit_id(id_length=40) -> str:
+
+def generate_commit_id(id_length: int = 40) -> str:
     """Creates a random string using 0-9a-f, of a certain length."""
     chars = "1234567890abcdef"
     return "".join(random.choice(chars) for _ in range(id_length))
 
 
 def resolve_commit_id(user_input: str) -> str:
-    """Returns a commit id, whether if the param passed to checkout() was a branch name or the commit id itself."""
+    """Returns a commit id, whether if the param passed was a branch name or the commit id itself."""
     branch_commit_id = get_commit_id_of_branch(user_input)
-    return branch_commit_id if branch_commit_id else user_input
+    return branch_commit_id or user_input
 
 
 def get_head_id() -> str:
     """Returns the commit id of HEAD."""
-    with open(path_to.references, "r") as f:
-        lines = f.readlines()
-    return lines[0].split("=")[1].strip()
+    lines = path_to.references.read_text().split("\n")
+    name, _, head_id = lines[0].partition("=")
+    return head_id
 
 
-def get_parent():  # Type annotations?
+def get_parent() -> Optional[str]:
     return get_head_id() if path_to.references.exists() else None
-
 
 
 # Files:
 
+
 def copy_changed_files(
-    path_from: Path, path_to: Path, changed_files: Set[Path], replace=False
-) -> None:
-    """Given paths to two dirs and a list of files who've been changed, replaces the files from dir1 with their version from dir2.
+    path_from: Path, path_to: Path, changed_files: Set[Path], replace: bool = False
+) -> None:  # TODO: edit documentation.
+    """Given a list of added or changed files,
+    replaces the files from dir1 with their version from dir2.
     When called from `checkout()`, replaces all of the committed files in the repository with their version in the specified commit id (untracked files remain unchanged).
     When called from `merge()`, replaces or adds files in staging_area with files that were either changed or added since the common base dir until the user input dir.
     Doesn't support moving, renaming or deleting files, yet.
@@ -98,22 +92,25 @@ def copy_changed_files(
         hierarchy = dest.parent
         if not hierarchy.exists():
             hierarchy.mkdir(parents=True)
-        # if replace:
-        #     dest.unlink()  # originally os.remove
-        print(f">> trying to copy `{source}` to {dest}")
-        shutil.copy2(source, hierarchy)  # or dest?
+        if replace:
+            dest.unlink()  # originally os.remove
+        shutil.copy2(source, hierarchy)
 
 
 def get_files_with_different_content(
     path_to_dir1: Path, path_to_dir2: Path, mutual_files: Set[Path]
 ) -> Set[Path]:
-    """Joins the relative path of each file and compares its content. Returns a list of filepaths with different content.
-    Mutual files must be mutual to both dirs.
-    When called through `status()`, gets all relative paths to files from the repository and from staging area, thus returning changes not staged for commit.
-    When called through `merge()`, gets all relative paths to files from the branch or commit id the user has entered, and the first mutual parent of the latter and of HEAD."""
+    """Joins the relative path of each file and compares its content.
+    Returns a list of filepaths with different content.
+    Mutual files are files that appear in both dirs.
+
+    - When called through `status()`, gets files from the repository and from staging area, 
+    thus returning changes not staged for commit;
+    - When called through `merge()`, gets files from the branch or commit id the user has 
+    entered, and the first mutual parent of the latter and of HEAD.
+    """
     files_with_different_content = set()
     for fp in mutual_files:
-        # fp = re.sub(r"^\.\\", "", str(fp))
         p1 = path_to_dir1 / fp
         p2 = path_to_dir2 / fp
         if not cmp(p1, p2):
@@ -121,32 +118,25 @@ def get_files_with_different_content(
     return files_with_different_content
 
 
-
 # Branches:
+
 
 def get_active_branch_name() -> str:
     """Returns the content of `activated.txt`."""
-    with open(path_to.active_branch, "r") as f:
-        active_branch_name = f.read()
-    return active_branch_name
+    return path_to.active_branch.read_text()
 
 
-def get_branch_index(references_content: List[str], branch_name="") -> int:
-    """This function is pretty weird, but it unites two actions, in order to not open the file and go through the list twice.
-    Given a branch name (taken from `activated.txt`), returns it's line index on references.txt, and wether it has the same commit_id as HEAD.
+def get_branch_index(references_content: List[str], branch_name: str = "") -> int:
+    """Returns the line number of the given branch name (in the references file).
+    If a branch name is not given, the index of the active branch will be returned.
+    Returns -1 if there currently isn't an active branch.
     """
-    branch_name = branch_name if branch_name else get_active_branch_name()
-    # Originally, `get_active_branch_name()` was the default parameter.
-    # However, it raised an error during the `init()` method:
-    # When a func is given as a default param, an error is raised if it may not work.
-    # The `paths` module does not generate the active_branch attr for the init command,
-    # And therefore the function crashed and an error was raised.
-
+    branch_name = branch_name or get_active_branch_name()
     if not branch_name:
         return -1
 
     for i, line in enumerate(references_content):
-        name = line.strip().split("=")[0]
+        name, _, _id = line.partition("=")
         if name == branch_name:
             return i
 
@@ -154,18 +144,22 @@ def get_branch_index(references_content: List[str], branch_name="") -> int:
 def is_branch_id_equal_to_head_id(
     references_content: List[str], branch_index: int
 ) -> bool:
+    """Returns True if the id of the given brnach is identical to the id of HEAD;
+    False if otherwise.
+    """
     if branch_index == -1:
         return False
 
-    branch_id = references_content[branch_index].split("=")[1].strip()
-    head_id = references_content[0].split("=")[1].strip()  # is there a better way?
+    head, _, head_id = references_content[0].strip().partition("=")
+    branch_name, _, branch_id = references_content[branch_index].strip().partition("=")
     return head_id == branch_id
 
 
 def get_commit_id_of_branch(user_input: str) -> str:
     """Tries to find the branch name in references.txt.
     If the branch is found, returns the commit_id of the branch;
-    else, returns an empty string (may happen if the user used a commit_id as a parameter).
+    else, returns an empty string (may happen if the user used a
+    commit_id as a parameter).
     """
     with open(path_to.references, "r") as f:
         lines = f.readlines()
@@ -177,33 +171,53 @@ def get_commit_id_of_branch(user_input: str) -> str:
     return ""
 
 
+def initiate_references_file(commit_id: str) -> None:
+    path_to.references.write_text(f"HEAD={commit_id}\nmaster={commit_id}\n")
 
-# Update References File:
 
-def handle_references_file(commit_id: str) -> None:
-    """Checks is the id of HEAD and the active branch are the same.
-    If they aren't, only HEAD's id changes. If they are, they both change.
+def should_change_active_branch(
+    active_branch_index: int, ref_content: List[str], is_merge: bool
+) -> bool:
+    if is_merge:
+        return True
+    return is_branch_id_equal_to_head_id(ref_content, active_branch_index)
+
+
+def update_branches(
+    commit_id: str,
+    active_branch_index: int,
+    ref_content: List[str],
+    change_active_branch: bool,
+) -> List[str]:
+    """Recieves the content of references.txt, and returns an updated version of it.
+    HEAD will always be updated; the active branch may or may not be updated.
+    """
+    ref_content[0] = f"HEAD={commit_id}\n"
+    if change_active_branch:
+        branch_name, _, branch_id = ref_content[active_branch_index].partition("=")
+        ref_content[active_branch_index] = f"{branch_name}={commit_id}\n"
+    return ref_content
+
+
+def handle_references_file(commit_id: str, is_merge: bool = False) -> None:
+    """Used after `commit`, `checkout`, and `merge`.
+    Updates the current HEAD id to a new commit id.
+
+    If the active branch has the same id as HEAD, both shall be updated.
+    If the function is called via `merge` (is_merge=True), the active branch
+    shall be updated regardless of the id.
     """
     if not path_to.references.exists():
-        lines = f"HEAD={commit_id}\nmaster={commit_id}\n"
+        initiate_references_file(commit_id)
+        return
 
-    else:
-        with open(path_to.references, "r") as f:
-            lines = f.readlines()
+    with open(path_to.references, "r") as f:
+        lines = f.readlines()
+        # didn't use `.read_text()` because it fucks the "\n" up
 
-        branch_index = get_branch_index(lines)
-        is_branch_equal_to_head = is_branch_id_equal_to_head_id(lines, branch_index)
-        lines[0] = f"HEAD={commit_id}\n"  # Change HEAD's value to commit_id
-
-        if is_branch_equal_to_head:
-            branch_name = lines[branch_index].split("=")[0]
-            lines[branch_index] = f"{branch_name}={commit_id}\n"
-
-    with open(path_to.references, "w") as f:
-        f.write("".join(lines))
-
-def add_branch_name_to_references(branch_name: str) -> None:
-    head = get_head_id()
-    with open(path_to.references, "a") as f:
-        f.write(f"{branch_name}={head}\n")
-
+    active_branch_index = get_branch_index(lines)
+    change_active_branch = should_change_active_branch(
+        active_branch_index, lines, is_merge
+    )
+    lines = update_branches(commit_id, active_branch_index, lines, change_active_branch)
+    path_to.references.write_text("".join(lines))

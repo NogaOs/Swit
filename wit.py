@@ -1,65 +1,44 @@
+import argparse
 import sys
 
 from loguru import logger
 
-
-import inner.checkout as ck
-
 import common.exceptions as err
-
-from common.helper_funcs import (
-    add_branch_name_to_references, get_head_id, get_image_data
-)
-
+import inner.checkout as checkout_
+from common.helper_funcs import get_head_id, get_image_data
 from inner.add import get_abs_path, inner_add
-
+from inner.branch import add_branch_name_to_references
 from inner.commit import inner_commit
-
 from inner.graph import inner_graph
-
 from inner.init import inner_init
-
 from inner.merge import get_merge_paths, inner_merge
-
 from inner.status import inner_status
 
 
-
-def init():
+def init() -> bool:
     try:
         inner_init(".wit", ("images", "staging_area"))
     except FileExistsError:
-        logger.error("Cannot initiate a repository inside of another repository.")
+        logger.warning("Cannot initiate a repository inside of another repository.")
         return False
     logger.info(">>> All folders were created.")
     return True
 
 
-def add():
+def add(path) -> bool:
     try:
-        backup_path = get_abs_path(sys.argv[2])
-    except IndexError:
-        logger.error("Usage: python <path/to/wit.py> <add> <backup path>")
-        return False
+        backup_path = get_abs_path(path)
     except FileNotFoundError as e:
-        logger.error(e)
+        logger.warning(e)
         return False
 
     inner_add(backup_path)
-
     logger.info(">>> Backup created.")
     return True
 
 
-def commit():
-    try:
-        user_message = sys.argv[2]
-    except IndexError:
-        logger.error("Usage: <python> <path/to/wit.py> <commit> <MESSAGE>")
-        return False
-
+def commit(user_message) -> bool:
     inner_commit(user_message)
-
     logger.info(">>> Commit executed successfully.")
     return True
 
@@ -67,100 +46,172 @@ def commit():
 def status() -> None:
     try:
         inner_status()
-    except err.ImpossibleStatusError as e:
-        logger.error(e)
+    except err.CommitRequiredError as e:
+        logger.warning(e)
         return False
 
 
-def checkout():
+def checkout(indicator: str) -> bool:
+    # The indicator could be either a branch name or a commit id.
     try:
-        user_input = sys.argv[2]  # TODO: deleted an untracked file
-    except IndexError:
-        logger.error(
-            "Usage: <python> <path/to/wit.py> <checkout> <branch name OR commit id>"
-        )
-        return False
-
-    try:
-        image_commit_id, image_dir_path = get_image_data(user_input)
+        image_commit_id, image_dir_path = get_image_data(indicator)
     except err.CommitIdError as e:
-        logger.error(e)
+        logger.warning(e)
         return False
 
     try:
-        ck.inner_checkout(user_input, image_commit_id, image_dir_path)
+        checkout_.inner_checkout(indicator, image_commit_id, image_dir_path)
     except err.ImpossibleCheckoutError:
-        # The error is being handled within `inner_checkout`.
+        # The error is handled within `inner_checkout`.
         return False
     except FileNotFoundError as e:
-        logger.error(e)
+        logger.warning(e)
         return False
 
-    
     logger.info(">>> Checkout Executed Successfully.")
+    return True
 
 
-def graph():
-    is_all = False
-    if len(sys.argv) == 3:
-        is_all = sys.argv[2] == "--all"  # TODO: is there a better way?
-        if not is_all:
-            logger.error("Usage: <python> <path/to/wit.py> <branch> [--all]")
-            return False
-
+def graph(is_all: bool) -> bool:
     inner_graph(is_all)
-    return
+    return True
 
 
-def branch():
+def branch(branch_name: str) -> bool:
     try:
-        branch_name = sys.argv[2]
-    except IndexError:
-        logger.error("Usage: <python> <path/to/wit.py> <branch> <NAME>")
+        add_branch_name_to_references(branch_name)
+    except (err.CommitRequiredError, err.BranchNameExistsError) as e:
+        logger.warning(e)
         return False
 
-    add_branch_name_to_references(branch_name)
     logger.info(">>> Branch added.")
+    return True
 
 
-def merge():  # TODO: didn't workkkkk
+def merge(indicator: str) -> bool:
     try:
-        user_input = sys.argv[2]
-    except IndexError:
-        logger.error("Usage: <python> <path/to/wit.py> <merge> <BRANCH_NAME>")
-        return False
-
-    try:
-        paths = get_merge_paths(user_input)
+        paths = get_merge_paths(indicator)
     except err.CommitIdError as e:
-        logger.error(e)
+        logger.warning(e)
         return False
 
     try:
-        inner_merge(user_input, *paths)
+        inner_merge(indicator, *paths)
     except err.ImpossibleMergeError as e:
-        logger.error(e)
+        logger.warning(e)
         return False
 
     logger.info(">>> Merge was executed successfully.")
-
-
-
-WIT_FUNCTIONS = {
-    "init": init,
-    "add": add,
-    "commit": commit,
-    "status": status,
-    "checkout": checkout,
-    "graph": graph,
-    "branch": branch,
-    "merge": merge,
-}
+    return True
 
 
 if __name__ == "__main__":
-    try:
-        WIT_FUNCTIONS[sys.argv[1]]()
-    except (IndexError, KeyError) as e:
-        print("\nPlease pass one of the following functions as an argument:")
-        [print(f"{i} - {func}") for i, func in enumerate(WIT_FUNCTIONS.keys(), 1)]
+    parser = argparse.ArgumentParser(
+        description="Wit is an open source version control system."
+    )
+    subparser = parser.add_subparsers(
+        dest="command", description="Choose a wit command from the list below:"
+    )
+
+    # Init:
+    _init = subparser.add_parser(
+        "init",
+        description="INITTTT",
+    )
+
+    # Add:
+    _add = subparser.add_parser(
+        "add",
+        description="Tells wit to include updates to a particular file or folder in the next commit.",
+    )
+    _add.add_argument(
+        "path", type=str, help="An absolute or relative path to a file or dir"
+    )
+
+    # Commit:
+    _commit = subparser.add_parser(
+        "commit",
+        description="Creates a snapshot of the repository.",
+    )
+    _commit.add_argument(
+        "--message", "--m", type=str, help="User message"
+    )
+
+    # Status:
+    _status = subparser.add_parser(
+        "status",
+        description="---",
+    )
+
+    # Checkout:
+    _checkout = subparser.add_parser(
+        "checkout",
+        description="---",
+    )
+    _checkout.add_argument(
+        "indicator", type=str, help="Either a branch name or a commit id"
+    )
+
+    # Graph:
+    _graph = subparser.add_parser(
+        "graph",
+        description="---",
+    )
+    _graph.add_argument('--all', action='store_true', help='---')
+
+    # Branch:
+    _branch = subparser.add_parser(
+        "branch",
+        description="---",
+    )
+    _branch.add_argument(
+        "name", type=str, help="A branch name"
+    )
+
+    # Merge:
+    _merge = subparser.add_parser(
+        "merge",
+        description="---",
+    )
+    _merge.add_argument(
+        "indicator", type=str, help="Either a branch name or a commit id"
+    )
+
+
+    args = parser.parse_args()
+
+
+    if args.command == "init":
+        init()
+
+    elif args.command == "add":
+        add(args.path)
+
+    elif args.command == "commit":
+        commit(args.message)
+
+    elif args.command == "status":
+        status()
+
+    elif args.command == "checkout":
+        checkout(args.indicator)
+
+    elif args.command == "graph":
+        graph(args.all)
+
+    elif args.command == "branch":
+        branch(args.name)
+
+    elif args.command == "merge":
+        merge(args.indicator)
+
+
+
+
+
+    # try:
+    #     WIT_FUNCTIONS[sys.argv[1]]()
+    # except (IndexError, KeyError) as e:
+    #     print("\nPlease pass one of the following functions as an argument:")
+    #     for i, func in enumerate(WIT_FUNCTIONS.keys(), 1):
+    #         print(f"{i} - {func}")

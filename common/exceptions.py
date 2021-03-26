@@ -10,8 +10,8 @@ class CommitIdError(FileNotFoundError):
     pass
 
 
-class ImpossibleStatusError(FileNotFoundError):
-    """Must commit at least once before checking status."""
+class CommitRequiredError(FileNotFoundError):
+    """Cannot execute prior to first commit."""
 
     pass
 
@@ -24,5 +24,11 @@ class ImpossibleMergeError(Exception):
 
 class ImpossibleCheckoutError(Exception):
     """There must be no changes to be committed, not changes not staged for commit."""
+
+    pass
+
+
+class BranchNameExistsError(Exception):
+    """Cannot create branch, as there is another branch with the same name."""
 
     pass

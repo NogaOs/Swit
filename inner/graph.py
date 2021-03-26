@@ -27,11 +27,11 @@ def get_parents_of_image_dict(show_first_six_digits=False) -> Dict[str, List[str
     """
     parent_file_content = get_parent_file_content()
 
-    batman_commit_id = parent_file_content[0].split("=")[0]  # cuz it has no parents
+    batman_commit_id, _, no_parents = parent_file_content[0].partition("=")
     image_and_parents = defaultdict(list, {batman_commit_id: []})
 
     for line in parent_file_content[1:]:
-        image, _, parents = line.partition("=")
+        image, _, parents = line.strip().partition("=")
         parents = parents.split(", ")
         for parent in parents:
             image_and_parents[image].append(parent.strip())

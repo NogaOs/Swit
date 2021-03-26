@@ -92,23 +92,23 @@ def update_staging_area(
     )
 
 
-def update_active_branch(new_commit_id: str) -> None:
-    """After a merge has been executed, 
-    the HEAD and the active branch are updated with the new commit ID.
-    """
-    # I could mix this func up with handle_ref_file(). but then the latter may be too 
-    # long and messy. this way, however, I have to read ref file twice. hm.
-    with open(path_to.references, "r") as f:
-        lines = f.readlines()
+# def update_active_branch(new_commit_id: str) -> None:
+#     """After a merge has been executed, 
+#     the HEAD and the active branch are updated with the new commit ID.
+#     """
+#     # I could mix this func up with handle_ref_file(). but then the latter may be too 
+#     # long and messy. this way, however, I have to read ref file twice. hm.
+#     with open(path_to.references, "r") as f:
+#         lines = f.readlines()
 
-    active_branch_name = helper.get_active_branch_name()
+#     active_branch_name = helper.get_active_branch_name()
 
-    if active_branch_name:
-        i = helper.get_branch_index(lines, active_branch_name)
-        lines[i] = f"{active_branch_name}={new_commit_id}\n"
+#     if active_branch_name:
+#         i = helper.get_branch_index(lines, active_branch_name)
+#         lines[i] = f"{active_branch_name}={new_commit_id}\n"
 
-    with open(path_to.references, "w") as f:
-        f.write("".join(lines))
+#     with open(path_to.references, "w") as f:
+#         f.write("".join(lines))
 
 
 def get_commit_merge_message(
@@ -135,7 +135,7 @@ def commit_merge(
         head_commit_id, user_commit_id, user_input
     )
     parents = f"{head_commit_id}, {user_commit_id}"
-    inner_commit(commit_message, new_commit_id, parents)
+    inner_commit(commit_message, new_commit_id, parents, is_merge=True)
 
 
 def get_merge_paths(user_input: str):
@@ -184,5 +184,3 @@ def inner_merge(
     # Commit:
     new_commit_id = generate_commit_id()
     commit_merge(new_commit_id, head_commit_id, user_commit_id, user_input)
-    # Update reference file:
-    update_active_branch(new_commit_id)  # TODO: this appears twice. why
