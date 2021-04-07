@@ -1,25 +1,20 @@
 import os
-
 from glob import glob
-
 from pathlib import Path
-
 from sys import argv, exit
 
-
 from loguru import logger
-
 
 from common.exceptions import WitDirectoryNotFoundError
 
 
-def is_init() -> bool:
+def is_init() -> bool:  # TODO: is there a better way?
     if len(argv) == 2:
         return argv[1] == "init"
     return False
 
 
-def get_uppermost_dir(cwd: Path) -> Path:
+def get_uppermost_dir(cwd: Path) -> Path:  # Maybe `is_absolute()`? https://docs.python.org/3/library/pathlib.html
     """Returns the root directory.
     Example: `C:\\` fow windows, `/`(?) for Linux.
     """
@@ -52,7 +47,7 @@ if not is_init():
     try:
         repo = get_repo_path(cwd)
     except WitDirectoryNotFoundError as e:
-        logger.critical(e)
+        logger.error(e)
         exit()
 
 

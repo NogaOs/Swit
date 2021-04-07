@@ -1,27 +1,18 @@
 from collections import defaultdict
-
 from pathlib import Path
-
 from typing import Dict, List, Tuple
 
+import common.paths as path_to
 import networkx as nx
-
+from common.helper_funcs import get_head_id
 from matplotlib import pyplot as plt
 
 
-import common.paths as path_to
-
-from common.helper_funcs import get_head_id
-
-
-
 def get_parent_file_content() -> List[str]:
-    with open(path_to.parents, "r") as f:
-        lines = f.readlines()
-    return lines
+    return path_to.parents.read_text().split("\n")
 
 
-def get_parents_of_image_dict(show_first_six_digits=False) -> Dict[str, List[str]]:
+def get_parents_by_image() -> Dict[str, List[str]]:
     """Returns a defaultdict representing each commit id, and the commit id of it's parent(s).
     Example: {'123': ['234'], '234': ['345', '678']}
     """
@@ -32,9 +23,8 @@ def get_parents_of_image_dict(show_first_six_digits=False) -> Dict[str, List[str
 
     for line in parent_file_content[1:]:
         image, _, parents = line.strip().partition("=")
-        parents = parents.split(", ")
-        for parent in parents:
-            image_and_parents[image].append(parent.strip())
+        parents = parents.split(",")
+        image_and_parents[image].extend(parent for parent in parents)
 
     return image_and_parents
 
@@ -42,7 +32,10 @@ def get_parents_of_image_dict(show_first_six_digits=False) -> Dict[str, List[str
 def edgenerator(
     image_and_parents: Dict[str, List[str]]
 ) -> List[Tuple[str, str]]:
-    """For a list ['a', 'b', 'c'], will yield [('a', 'b'), ('b', 'c')]."""
+    """Iterates over the parents_by_image dict, and returns a list of tuples -
+    each tuple represents the child and parent nodes. If a node has more than one
+    parent, it shall be represented with multiple tuples.
+    For a list ['a', 'b', 'c'], will return [('a', 'b'), ('b', 'c')]."""
     return [
         (node, parent)
         for node, parents in image_and_parents.items()
@@ -53,18 +46,16 @@ def edgenerator(
 def get_parent_edges_of(
     image_and_parents: Dict[str, List[str]], image_id: str
 ) -> List[Tuple[str, str]]:
-    """Returns the EDGES for the graph method."""
+    """Starting from a certain id (HEAD in this case), returns all parents until the first commit."""
     edges = []
     awaiting = [image_id]
     i = 0
-    while i < len(awaiting):
-        # There was also a parents != [] condition, but it was removed. Just leaving this here in case it broke something
+    for i in range(len(awaiting)):
         cur_image = awaiting[i]
         parents = image_and_parents[cur_image]
         for parent in parents:
             edges.append((cur_image, parent))
             awaiting.append(parent)
-        i += 1
     return edges
 
 
@@ -76,16 +67,20 @@ def plot_graph(edges: List[Tuple[str, str]]) -> None:
     plt.show()
 
 
-def inner_graph(is_all: bool, show_first_six_digits=True) -> None:
-    parents_dict = get_parents_of_image_dict()
+def inner_graph(is_all: bool, show_entire_id: bool) -> None:
+    """Shows a graph of all parental hierarchy, starting from HEAD.
+    If is_all is True, the graph will show ALL commits and the relations between them.
+    If is_entire is True, it will show the entire id of each entry.
+    """
+    parents_by_image = get_parents_by_image()
 
     if is_all:
-        edges = edgenerator(parents_dict)
+        edges = edgenerator(parents_by_image)
     else:
         head_id = get_head_id()
-        edges = get_parent_edges_of(parents_dict, head_id)
+        edges = get_parent_edges_of(parents_by_image, head_id)
 
-    if show_first_six_digits:
+    if not show_entire_id:
         edges = [(x[:6], y[:6]) for x, y in edges]
 
     plot_graph(edges)

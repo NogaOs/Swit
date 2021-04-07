@@ -5,7 +5,7 @@ from loguru import logger
 
 import common.exceptions as err
 import inner.checkout as checkout_
-from common.helper_funcs import get_head_id, get_image_data
+from common.helper_funcs import get_head_id, resolve_commit_id, get_valid_commit_path
 from inner.add import get_abs_path, inner_add
 from inner.branch import add_branch_name_to_references
 from inner.commit import inner_commit
@@ -25,7 +25,7 @@ def init() -> bool:
     return True
 
 
-def add(path) -> bool:
+def add(path: str) -> bool:
     try:
         backup_path = get_abs_path(path)
     except FileNotFoundError as e:
@@ -37,24 +37,25 @@ def add(path) -> bool:
     return True
 
 
-def commit(user_message) -> bool:
+def commit(user_message: str) -> bool:
     inner_commit(user_message)
     logger.info(">>> Commit executed successfully.")
     return True
 
 
-def status() -> None:
+def status() -> bool:
     try:
         inner_status()
     except err.CommitRequiredError as e:
         logger.warning(e)
         return False
+    return True
 
 
 def checkout(indicator: str) -> bool:
-    # The indicator could be either a branch name or a commit id.
     try:
-        image_commit_id, image_dir_path = get_image_data(indicator)
+        image_commit_id = resolve_commit_id(indicator)
+        image_dir_path = get_valid_commit_path(image_commit_id, indicator)
     except err.CommitIdError as e:
         logger.warning(e)
         return False
@@ -72,8 +73,8 @@ def checkout(indicator: str) -> bool:
     return True
 
 
-def graph(is_all: bool) -> bool:
-    inner_graph(is_all)
+def graph(is_all: bool, is_entire: bool) -> bool:
+    inner_graph(is_all, is_entire)
     return True
 
 
@@ -107,16 +108,17 @@ def merge(indicator: str) -> bool:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Wit is an open source version control system."
+        description="Wit is an open source version control system.",
+        epilog="Thank you for supporting wit! <3"
     )
     subparser = parser.add_subparsers(
-        dest="command", description="Choose a wit command from the list below:"
+        dest="command", description="Wit commands:", required=True
     )
 
     # Init:
     _init = subparser.add_parser(
         "init",
-        description="INITTTT",
+        description="Create a new wit repository.",
     )
 
     # Add:
@@ -125,7 +127,7 @@ if __name__ == "__main__":
         description="Tells wit to include updates to a particular file or folder in the next commit.",
     )
     _add.add_argument(
-        "path", type=str, help="An absolute or relative path to a file or dir"
+        "path", type=str, help="an absolute or relative path to a file or dir"
     )
 
     # Commit:
@@ -133,53 +135,48 @@ if __name__ == "__main__":
         "commit",
         description="Creates a snapshot of the repository.",
     )
-    _commit.add_argument(
-        "--message", "--m", type=str, help="User message"
-    )
+    _commit.add_argument("--message", "--m", type=str, help="user message")
 
     # Status:
     _status = subparser.add_parser(
         "status",
-        description="---",
+        description="Display the repository and the staging area. Shows which changes have been staged, which haven't, and which files aren't being tracked by wit.",
     )
 
     # Checkout:
     _checkout = subparser.add_parser(
         "checkout",
-        description="---",
+        description="Updates files in the repository to match the version in the specified image.",
     )
     _checkout.add_argument(
-        "indicator", type=str, help="Either a branch name or a commit id"
+        "indicator", type=str, help="either a branch name or a commit id"
     )
 
     # Graph:
     _graph = subparser.add_parser(
         "graph",
-        description="---",
+        description="Shows a graph of all parental hierarchy, starting from HEAD.",
     )
-    _graph.add_argument('--all', action='store_true', help='---')
+    _graph.add_argument("--all", action="store_true", help="show all commits and the relations between them")
+    _graph.add_argument("--entire", "--e", action="store_true", help="show the entire id of each entry (default: first 6 chars)")
 
     # Branch:
     _branch = subparser.add_parser(
         "branch",
-        description="---",
+        description="Create another line of development in the project. Committing under a branch will give your commits a name that's easy to remember.",
     )
-    _branch.add_argument(
-        "name", type=str, help="A branch name"
-    )
+    _branch.add_argument("name", type=str, help="branch name")
 
     # Merge:
     _merge = subparser.add_parser(
         "merge",
-        description="---",
+        description="Creates a new commit, that is an integration of two other commits.",
     )
     _merge.add_argument(
-        "indicator", type=str, help="Either a branch name or a commit id"
+        "indicator", type=str, help="either a branch name or a commit id"
     )
 
-
     args = parser.parse_args()
-
 
     if args.command == "init":
         init()
@@ -197,21 +194,10 @@ if __name__ == "__main__":
         checkout(args.indicator)
 
     elif args.command == "graph":
-        graph(args.all)
+        graph(args.all, args.entire)
 
     elif args.command == "branch":
         branch(args.name)
 
     elif args.command == "merge":
         merge(args.indicator)
-
-
-
-
-
-    # try:
-    #     WIT_FUNCTIONS[sys.argv[1]]()
-    # except (IndexError, KeyError) as e:
-    #     print("\nPlease pass one of the following functions as an argument:")
-    #     for i, func in enumerate(WIT_FUNCTIONS.keys(), 1):
-    #         print(f"{i} - {func}")

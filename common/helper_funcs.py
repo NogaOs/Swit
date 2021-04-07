@@ -12,15 +12,13 @@ from common.exceptions import CommitIdError, BranchNameExistsError
 # Paths:
 
 
-def get_image_dir(commit_id: str) -> Path:
-    return path_to.images / commit_id
-
-
 def get_relpaths(
     p: Path, ignore_wit: bool = False, only_files: bool = True
 ) -> Set[Path]:
-    """Get the relative path of all files (not dirs), starting from a given dir.
-    The relative path should be identical within the repo, staging_area, and the image dir.
+    """Get the relative path of all files and dirs (default: only files), 
+    starting from a given directory.
+    The relative path should be identical within the repo, 
+    staging_area, and the image dir.
     `ignore_wit` is True when used on the repository.
     """
     entries = set(p.rglob("*"))
@@ -34,22 +32,18 @@ def get_relpaths(
     return {x.relative_to(p) for x in entries}
 
 
-def get_image_data(user_input: str) -> Tuple[str, Path]:
+def get_valid_commit_path(commit_id: str, image_indicator: str) -> Tuple[str, Path]:
     """Returns the path to the image dir, based on the user input (branch or commit id).
-    If the dir does not exist, it means that the user's input is problematic, 
+    If the dir does not exist, it means the user's input is problematic, 
     and a CommitIdError is thrown.
     """
-    commit_id = resolve_commit_id(user_input)
-    dir_path = get_image_dir(commit_id)
-
+    dir_path = path_to.images / commit_id
     if not dir_path.exists():
-        raise CommitIdError(f"'{commit_id}' is not a branch name, nor a commit id.")
-
-    return commit_id, dir_path
+        raise CommitIdError(f"'{image_indicator}' is not a branch name, nor a commit id.")
+    return dir_path
 
 
 # Commit Id:
-
 
 def generate_commit_id(id_length: int = 40) -> str:
     """Creates a random string using 0-9a-f, of a certain length."""
@@ -79,12 +73,16 @@ def get_parent() -> Optional[str]:
 
 def copy_changed_files(
     path_from: Path, path_to: Path, changed_files: Set[Path], replace: bool = False
-) -> None:  # TODO: edit documentation.
-    """Given a list of added or changed files,
-    replaces the files from dir1 with their version from dir2.
-    When called from `checkout()`, replaces all of the committed files in the repository with their version in the specified commit id (untracked files remain unchanged).
-    When called from `merge()`, replaces or adds files in staging_area with files that were either changed or added since the common base dir until the user input dir.
+) -> None:
+    """Copies specified files from dir1 into dir2. If the files have parent folders, the dir hierarchy will
+    be preserved. replace=True is used when the file already exists, so that the dir2 version shall
+    be deleted.
     Doesn't support moving, renaming or deleting files, yet.
+
+    - When called from `checkout()`, replaces all of the committed files in the repository with their 
+    version in the specified commit id (untracked files remain unchanged);
+    - When called from `merge()`, replaces or adds files in staging_area with files that were either 
+    changed or added since the common base dir until the user input dir.
     """
     for fp in changed_files:
         source = path_from / fp
@@ -161,9 +159,7 @@ def get_commit_id_of_branch(user_input: str) -> str:
     else, returns an empty string (may happen if the user used a
     commit_id as a parameter).
     """
-    with open(path_to.references, "r") as f:
-        lines = f.readlines()
-
+    lines = path_to.references.read_text().split("\n")
     for line in lines:
         branch_name, _, commit_id = line.partition("=")
         if branch_name == user_input:
@@ -178,6 +174,10 @@ def initiate_references_file(commit_id: str) -> None:
 def should_change_active_branch(
     active_branch_index: int, ref_content: List[str], is_merge: bool
 ) -> bool:
+    """The active branch id will always be updated to match HEAD after a merge.
+    When not merged, the active branch shall be updated only if it's id matches the
+    id or HEAD already.
+    """
     if is_merge:
         return True
     return is_branch_id_equal_to_head_id(ref_content, active_branch_index)
