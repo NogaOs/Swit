@@ -4,7 +4,8 @@ from typing import Dict, List, Set, Tuple
 
 import common.helper_funcs as helper
 import common.paths as path_to
-from common.exceptions import ImpossibleMergeError
+from common.exceptions import CommitIdError, ImpossibleMergeError
+from loguru import logger
 
 from inner.commit import inner_commit
 from inner.graph import get_parent_file_content, get_parents_by_image
@@ -169,4 +170,21 @@ def inner_merge(
     # Commit:
     new_commit_id = helper.generate_commit_id()
     commit_merge(new_commit_id, head_commit_id, user_commit_id, user_input)
+
+
+def merge(indicator: str) -> bool:
+    try:
+        paths = get_merge_paths(indicator)
+    except CommitIdError as e:
+        logger.warning(e)
+        return False
+
+    try:
+        inner_merge(indicator, *paths)
+    except ImpossibleMergeError as e:
+        logger.warning(e)
+        return False
+
+    logger.info(">>> Merge was executed successfully.")
+    return True
     

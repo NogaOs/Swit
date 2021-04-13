@@ -1,15 +1,15 @@
 import os
 import re
 import shutil
-from collections import namedtuple
 from pathlib import Path
-from typing import List, Set, Tuple, Union, Dict
+from typing import Dict, List, Set, Tuple, Union
 
 import common.paths as path_to
 from common.exceptions import CommitRequiredError
 from common.helper_funcs import (
     get_files_with_different_content, get_head_id, get_relpaths
 )
+from loguru import logger
 
 
 def get_changes_to_be_committed() -> Set[Path]:
@@ -70,3 +70,12 @@ def inner_status() -> None:
         )
     info = get_status_info(head_id)
     print_status(head_id, info)
+
+
+def status() -> bool:
+    try:
+        inner_status()
+    except CommitRequiredError as e:
+        logger.warning(e)
+        return False
+    return True

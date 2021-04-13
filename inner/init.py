@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Tuple
 
+from loguru import logger
+
 from common.paths import cwd
 
 
@@ -27,3 +29,13 @@ def inner_init(main_directory_name: str, sub_directory_names: Tuple[str, str]) -
     repo_path = cwd / main_directory_name
     create_init_files(repo_path, sub_directory_names)
     create_activated_file(repo_path)
+
+
+def init() -> bool:
+    try:
+        inner_init(".wit", ("images", "staging_area"))
+    except FileExistsError:
+        logger.warning("Cannot initiate a repository inside of another repository.")
+        return False
+    logger.info(">>> All folders were created.")
+    return True

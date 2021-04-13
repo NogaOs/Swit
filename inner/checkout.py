@@ -10,6 +10,7 @@ from common.helper_funcs import (
 from loguru import logger
 
 import inner.status as status
+from common.helper_funcs import get_head_id, resolve_commit_id, get_valid_commit_path
 
 
 def is_checkout_possible(
@@ -117,3 +118,24 @@ def inner_checkout(user_input: str, image_commit_id: str, image_dir_path: Path) 
     # Note: Updating activated.txt should remain before references.txt
     handle_activated_file(image_commit_id, user_input)
     handle_references_file(image_commit_id)
+
+
+def checkout(indicator: str) -> bool:
+    try:
+        image_commit_id = resolve_commit_id(indicator)
+        image_dir_path = get_valid_commit_path(image_commit_id, indicator)
+    except CommitIdError as e:
+        logger.warning(e)
+        return False
+
+    try:
+        inner_checkout(indicator, image_commit_id, image_dir_path)
+    except ImpossibleCheckoutError:
+        # The error is handled within `inner_checkout`.
+        return False
+    except FileNotFoundError as e:
+        logger.warning(e)
+        return False
+
+    logger.info(">>> Checkout Executed Successfully.")
+    return True

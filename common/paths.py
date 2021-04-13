@@ -14,9 +14,9 @@ def is_init() -> bool:  # TODO: is there a better way?
     return False
 
 
-def get_uppermost_dir(cwd: Path) -> Path:  # Maybe `is_absolute()`? https://docs.python.org/3/library/pathlib.html
+def get_uppermost_dir(cwd: Path) -> Path:
     """Returns the root directory.
-    Example: `C:\\` fow windows, `/`(?) for Linux.
+    Example: `C:\\` fow windows, `/` for Linux.
     """
     cur_path = cwd.parent
     parent = cur_path.parent
@@ -26,8 +26,8 @@ def get_uppermost_dir(cwd: Path) -> Path:  # Maybe `is_absolute()`? https://docs
 
 
 def get_repo_path(cwd: Path) -> Path:
-    """Starting from the current working directory, moves up the tree until it finds a directory containing
-    a `.wit` directory. That dir shall be referenced to as the repository.
+    """Starting from the current working directory, moves up the tree until it finds a directory
+    containing a `.wit` directory. That dir shall be referenced to as the repository.
     """
     uppermost_dir = get_uppermost_dir(cwd)
     while cwd != uppermost_dir:

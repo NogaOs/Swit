@@ -84,3 +84,8 @@ def inner_graph(is_all: bool, show_entire_id: bool) -> None:
         edges = [(x[:6], y[:6]) for x, y in edges]
 
     plot_graph(edges)
+
+
+def graph(full: bool, entire: bool) -> bool:
+    inner_graph(full, entire)
+    return True

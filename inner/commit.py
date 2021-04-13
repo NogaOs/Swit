@@ -3,6 +3,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
+from loguru import logger
+
 import common.paths as path_to
 from common.helper_funcs import (
     generate_commit_id, get_parent, handle_references_file
@@ -64,3 +66,9 @@ def inner_commit(user_message: str, commit_id: str = generate_commit_id(), paren
     handle_references_file(commit_id, is_merge)
     add_to_parents_file(commit_id, parents)
     clear_changes_to_be_committed()
+
+
+def commit(message: str) -> bool:
+    inner_commit(message)
+    logger.info(">>> Commit executed successfully.")
+    return True

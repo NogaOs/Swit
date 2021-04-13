@@ -3,6 +3,8 @@ from os.path import abspath, relpath
 from pathlib import Path
 from typing import Tuple
 
+from loguru import logger
+
 import common.paths as paths
 
 
@@ -60,3 +62,15 @@ def inner_add(backup_path: Path) -> None:
         add_dir(backup_path, rel_from_repo_to_backup)
 
     update_changes_to_be_committed(rel_from_repo_to_backup)
+
+
+def add(path: str) -> bool:
+    try:
+        backup_path = get_abs_path(path)
+    except FileNotFoundError as e:
+        logger.warning(e)
+        return False
+
+    inner_add(backup_path)
+    logger.info(">>> Backup created.")
+    return True

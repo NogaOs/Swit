@@ -1,6 +1,7 @@
 import common.paths as path_to
 from common.exceptions import BranchNameExistsError, CommitRequiredError
 from common.helper_funcs import get_head_id
+from loguru import logger
 
 
 def does_branch_exist(branch_name: str) -> bool:
@@ -34,3 +35,14 @@ def add_branch_name_to_references(
     head_id = get_head_id()
     with open(path_to.references, "a") as f:
         f.write(f"{branch_name}={head_id}\n")
+
+
+def branch(name: str) -> bool:
+    try:
+        add_branch_name_to_references(name)
+    except (CommitRequiredError, BranchNameExistsError) as e:
+        logger.warning(e)
+        return False
+
+    logger.info(">>> Branch added.")
+    return True
