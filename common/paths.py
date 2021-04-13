@@ -1,19 +1,14 @@
 import os
-
 from glob import glob
-
 from pathlib import Path
-
 from sys import argv, exit
 
-
 from loguru import logger
-
 
 from common.exceptions import WitDirectoryNotFoundError
 
 
-def is_init() -> bool:
+def is_init() -> bool:  # TODO: is there a better way?
     if len(argv) == 2:
         return argv[1] == "init"
     return False
@@ -21,7 +16,7 @@ def is_init() -> bool:
 
 def get_uppermost_dir(cwd: Path) -> Path:
     """Returns the root directory.
-    Example: `C:\\` fow windows, `/`(?) for Linux.
+    Example: `C:\\` fow windows, `/` for Linux.
     """
     cur_path = cwd.parent
     parent = cur_path.parent
@@ -31,8 +26,8 @@ def get_uppermost_dir(cwd: Path) -> Path:
 
 
 def get_repo_path(cwd: Path) -> Path:
-    """Starting from the current working directory, moves up the tree until it finds a directory containing
-    a `.wit` directory. That dir shall be referenced to as the repository.
+    """Starting from the current working directory, moves up the tree until it finds a directory
+    containing a `.wit` directory. That dir shall be referenced to as the repository.
     """
     uppermost_dir = get_uppermost_dir(cwd)
     while cwd != uppermost_dir:
@@ -52,7 +47,7 @@ if not is_init():
     try:
         repo = get_repo_path(cwd)
     except WitDirectoryNotFoundError as e:
-        logger.critical(e)
+        logger.error(e)
         exit()
 
 

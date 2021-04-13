@@ -1,24 +1,19 @@
 import shutil
-
 from pathlib import Path
-
 from typing import Dict, List, Set, Tuple
 
-
 import common.helper_funcs as helper
-
 import common.paths as path_to
+from common.exceptions import CommitIdError, ImpossibleMergeError
+from loguru import logger
 
-from common.exceptions import ImpossibleMergeError
-
-from inner.commit import generate_commit_id, inner_commit
-
-from inner.graph import get_parent_file_content, get_parents_of_image_dict
-
+from inner.commit import inner_commit
+from inner.graph import get_parent_file_content, get_parents_by_image
 
 
 def is_merge_possible(head_dir_path: Path) -> bool:
-    """`merge()` will fail to execute if the content of staging_area is different from the content of the HEAD image.
+    """`merge()` will fail to execute if the content of staging_area 
+    is different from the content of HEAD.
     Returns a boolean value of if files were either added or changed.
     """
     head_files = helper.get_relpaths(head_dir_path)
@@ -55,11 +50,11 @@ def get_parents_of(image_and_parents: Dict[str, List[str]], commit_id: str) -> S
 def get_first_mutual_parent(head_commit_id: str, user_commit_id: str) -> str:
     """Returns the the commit id of the first mutual parent of HEAD and the chosen image."""
     parent_file_content = get_parent_file_content()
-    parents_dict = get_parents_of_image_dict(parent_file_content)
+    parents_dict = get_parents_by_image()
 
     head_parents = get_parents_of(parents_dict, head_commit_id)
     input_parents = get_parents_of(parents_dict, user_commit_id)
-    mutual_parents = head_parents.intersection(input_parents)
+    mutual_parents = head_parents & input_parents
 
     # Beginning from the end, 
     # checks the parent list to see if the commit id is included in the mutual parents.
@@ -73,12 +68,12 @@ def get_first_mutual_parent(head_commit_id: str, user_commit_id: str) -> str:
 def get_changed_files(since_dir: Path, until_dir: Path) -> Tuple[Set[Path], Set[Path]]:
     """Returns files that were added and files that were changed, between dir a and dir b.
     When called through `merge()`, the returned files are since the first mutual parent,
-    until the user dir or head dir.
+    until the chosen image to merge.
     """
     since_dir_files = helper.get_relpaths(since_dir)
     until_dir_files = helper.get_relpaths(until_dir)
     added_files = until_dir_files - since_dir_files
-    mutual_files = until_dir_files.intersection(since_dir_files)
+    mutual_files = until_dir_files & since_dir_files
     changed_files = helper.get_files_with_different_content(since_dir, until_dir, mutual_files)
     return added_files, changed_files
 
@@ -86,29 +81,15 @@ def get_changed_files(since_dir: Path, until_dir: Path) -> Tuple[Set[Path], Set[
 def update_staging_area(
     path_to_user_dir: Path, added_files: Set[Path], changed_files: Set[Path]
 ) -> None:
+    """Added files are the files that exist in the chosen image to merge, and do not exist in the
+    mutual parent dir. Those files shall be added to staging_area;
+    Mutual files are files that exist it both versions, but the content has changed. Those files
+    shall be replaced to their newer version (merge conflicts are not handled).
+    """
     helper.copy_changed_files(path_to_user_dir, path_to.staging_area, added_files)
     helper.copy_changed_files(
         path_to_user_dir, path_to.staging_area, changed_files, replace=True
     )
-
-
-# def update_active_branch(new_commit_id: str) -> None:
-#     """After a merge has been executed, 
-#     the HEAD and the active branch are updated with the new commit ID.
-#     """
-#     # I could mix this func up with handle_ref_file(). but then the latter may be too 
-#     # long and messy. this way, however, I have to read ref file twice. hm.
-#     with open(path_to.references, "r") as f:
-#         lines = f.readlines()
-
-#     active_branch_name = helper.get_active_branch_name()
-
-#     if active_branch_name:
-#         i = helper.get_branch_index(lines, active_branch_name)
-#         lines[i] = f"{active_branch_name}={new_commit_id}\n"
-
-#     with open(path_to.references, "w") as f:
-#         f.write("".join(lines))
 
 
 def get_commit_merge_message(
@@ -118,8 +99,8 @@ def get_commit_merge_message(
     if user used a branch name, the latter will appear next to the id.
     Example: `Merged 123456 (HEAD) with 654321 (<branch_name>)`.
     """
-    is_id = user_input == user_commit_id
     shortened_head_id = head_commit_id[:6]
+    is_id = user_input == user_commit_id
     merged_with = (
         user_commit_id[:6] if is_id else f"{user_commit_id[:6]} ({user_input})"
     )
@@ -131,10 +112,18 @@ def commit_merge(
     new_commit_id: str, head_commit_id: str, user_commit_id: str, 
     user_input: str
 ) -> None:
+    """A commit is performed automatically after merging.
+
+    Differences from a normal commit:
+    - Different message
+    - Two parents
+    - Active branch will always be updated with HEAD
+    (default: active branch will be updated only if the id is same as HEAD.)
+    """
     commit_message = get_commit_merge_message(
         head_commit_id, user_commit_id, user_input
     )
-    parents = f"{head_commit_id}, {user_commit_id}"
+    parents = f"{head_commit_id},{user_commit_id}"
     inner_commit(commit_message, new_commit_id, parents, is_merge=True)
 
 
@@ -142,12 +131,13 @@ def get_merge_paths(user_input: str):
     """Returns the commit id and image path of the user image, HEAD, and their first mutual parent."""
     # Head:
     head_commit_id = helper.get_head_id()
-    head_dir_path = helper.get_image_dir(head_commit_id)
+    head_dir_path = path_to.images / head_commit_id
     # User Image:
-    user_commit_id, user_dir_path = helper.get_image_data(user_input)
+    user_commit_id = helper.resolve_commit_id(user_input)
+    user_dir_path = helper.get_valid_commit_path(user_commit_id, user_input)
     # Common Base Image:
     common_base_id = get_first_mutual_parent(head_commit_id, user_commit_id)
-    common_base_dir_path = helper.get_image_dir(common_base_id)
+    common_base_dir_path = path_to.images / common_base_id
 
     return (
         head_commit_id,
@@ -166,12 +156,8 @@ def inner_merge(
     user_dir: Path,
     common_base_dir: Path,
 ) -> None:
-    """Commits a new image containing a combination of the current HEAD, and the branch name\commit id 
-    that was given as parameter.
-    All files that were added between versions will be copied to the new image;
-    Regarding files with different content between versions - 
-    the file of the given branch name will be added (merge conflicts are not handled).
-    The content of stanging area shall be updated and committed. 
+    """Integrates HEAD and another chosen commit (by branch name or commit id).
+    staging_area will be updated to the integrated version, and commit normally.
     The content of the repository will not change.
     """
     if not is_merge_possible(head_dir):
@@ -182,5 +168,23 @@ def inner_merge(
     changed_files = get_changed_files(common_base_dir, user_dir)
     update_staging_area(user_dir, *changed_files)
     # Commit:
-    new_commit_id = generate_commit_id()
+    new_commit_id = helper.generate_commit_id()
     commit_merge(new_commit_id, head_commit_id, user_commit_id, user_input)
+
+
+def merge(indicator: str) -> bool:
+    try:
+        paths = get_merge_paths(indicator)
+    except CommitIdError as e:
+        logger.warning(e)
+        return False
+
+    try:
+        inner_merge(indicator, *paths)
+    except ImpossibleMergeError as e:
+        logger.warning(e)
+        return False
+
+    logger.info(">>> Merge was executed successfully.")
+    return True
+    
