@@ -9,8 +9,8 @@ from typing import List, Set, Tuple, Optional
 import common.paths as path_to
 from common.exceptions import CommitIdError, BranchNameExistsError
 
-# Paths:
 
+# Paths:
 
 def get_relpaths(
     p: Path, ignore_wit: bool = False, only_files: bool = True
