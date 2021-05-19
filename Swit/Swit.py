@@ -1,6 +1,5 @@
 import argparse
 import sys
-print(sys.path)
 
 from loguru import logger
 
