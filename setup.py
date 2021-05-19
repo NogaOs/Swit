@@ -4,13 +4,13 @@ from setuptools import setup
 setup(
     name='Swit',
     packages=['Swit'],
-    version='0.1',
+    version='0.16',
     license='MIT',
     description='Swit is a basic open-source implementation of Git, meant for experimenting and studying Git\'s concepts and core design.',
     author='Noga Osin',
     author_email='nogaos97@gmail.com',
     url='https://github.com/NogaOs/Swit',
-    download_url='https://github.com/user/reponame/archive/v_01.tar.gz',
+    download_url='https://github.com/NogaOs/Swit/archive/refs/tags/v0.16.tar.gz',
     keywords=['git', 'version control', 'source control'],
     install_requires=[
         'wheel',
