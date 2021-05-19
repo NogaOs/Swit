@@ -2,11 +2,11 @@ import shutil
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
+from loguru import logger
+
 import common.helper_funcs as helper
 import common.paths as path_to
 from common.exceptions import CommitIdError, ImpossibleMergeError
-from loguru import logger
-
 from inner.commit import inner_commit
 from inner.graph import get_parent_file_content, get_parents_by_image
 

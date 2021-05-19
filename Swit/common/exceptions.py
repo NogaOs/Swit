@@ -1,5 +1,5 @@
 class WitDirectoryNotFoundError(FileNotFoundError):
-    """Failed to find a .wit directory."""
+    """Failed to find a .swit directory."""
 
     pass
 

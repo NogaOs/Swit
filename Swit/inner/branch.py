@@ -1,6 +1,5 @@
-import common.paths as path_to
 from common.exceptions import BranchNameExistsError, CommitRequiredError
-from common.helper_funcs import get_head_id
+
 from loguru import logger
 
 

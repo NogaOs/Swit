@@ -7,7 +7,7 @@ from common.paths import cwd
 
 
 def create_init_files(repo_path: Path, sub_directory_names: Tuple[str, str]) -> None:
-    """Creates a `.wit` directory in the current working directory; 
+    """Creates a `.swit` directory in the current working directory; 
     under it, creates empty dirs `images` and `staging_area`.
     """
     pathz = [repo_path]
@@ -25,7 +25,7 @@ def create_activated_file(
 
 
 def inner_init(main_directory_name: str, sub_directory_names: Tuple[str, str]) -> None:
-    """Creates a wit repository, containing `staging_area`, `images`, and `activated.txt`. """
+    """Creates a swit repository, containing `staging_area`, `images`, and `activated.txt`. """
     repo_path = cwd / main_directory_name
     create_init_files(repo_path, sub_directory_names)
     create_activated_file(repo_path)
@@ -33,7 +33,7 @@ def inner_init(main_directory_name: str, sub_directory_names: Tuple[str, str]) -
 
 def init() -> bool:
     try:
-        inner_init(".wit", ("images", "staging_area"))
+        inner_init(".swit", ("images", "staging_area"))
     except FileExistsError:
         logger.warning("Cannot initiate a repository inside of another repository.")
         return False
