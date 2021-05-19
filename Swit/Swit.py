@@ -1,22 +1,23 @@
 import argparse
 import sys
+print(sys.path)
 
 from loguru import logger
 
-from Swit.inner.add import add
-from Swit.inner.branch import branch
-from Swit.inner.checkout import checkout
-from Swit.inner.commit import commit
-from Swit.inner.graph import graph
-from Swit.inner.init import init
-from Swit.inner.merge import merge
-from Swit.inner.status import status
+from inner.add import add
+from inner.branch import branch
+from inner.checkout import checkout
+from inner.commit import commit
+from inner.graph import graph
+from inner.init import init
+from inner.merge import merge
+from inner.status import status
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Swit is an open source version control system.",
-        epilog="Thank you for supporting swit! <3"
+        epilog="Thank you for supporting Swit! <3"
     )
     subparser = parser.add_subparsers(
         dest="command", description="Swit commands:", required=True

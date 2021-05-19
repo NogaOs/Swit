@@ -1,6 +1,5 @@
-import Swit.common.paths as path_to
-from Swit.common.exceptions import BranchNameExistsError, CommitRequiredError
-from Swit.common.helper_funcs import get_head_id
+from common.exceptions import BranchNameExistsError, CommitRequiredError
+
 from loguru import logger
 
 

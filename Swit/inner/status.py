@@ -4,9 +4,9 @@ import shutil
 from pathlib import Path
 from typing import Dict, List, Set, Tuple, Union
 
-import Swit.common.paths as path_to
-from Swit.common.exceptions import CommitRequiredError
-from Swit.common.helper_funcs import (
+import common.paths as path_to
+from common.exceptions import CommitRequiredError
+from common.helper_funcs import (
     get_files_with_different_content, get_head_id, get_relpaths
 )
 from loguru import logger

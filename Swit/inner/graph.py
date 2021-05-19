@@ -2,9 +2,9 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import Swit.common.paths as path_to
+import common.paths as path_to
 import networkx as nx
-from Swit.common.helper_funcs import get_head_id
+from common.helper_funcs import get_head_id
 from matplotlib import pyplot as plt
 
 
