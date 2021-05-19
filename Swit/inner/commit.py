@@ -5,8 +5,8 @@ from typing import List, Optional
 
 from loguru import logger
 
-import common.paths as path_to
-from common.helper_funcs import (
+import Swit.common.paths as path_to
+from Swit.common.helper_funcs import (
     generate_commit_id, get_parent, handle_references_file
 )
 

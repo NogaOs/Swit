@@ -2,13 +2,13 @@ import shutil
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
-import common.helper_funcs as helper
-import common.paths as path_to
-from common.exceptions import CommitIdError, ImpossibleMergeError
+import Swit.common.helper_funcs as helper
+import Swit.common.paths as path_to
+from Swit.common.exceptions import CommitIdError, ImpossibleMergeError
 from loguru import logger
 
-from inner.commit import inner_commit
-from inner.graph import get_parent_file_content, get_parents_by_image
+from Swit.inner.commit import inner_commit
+from Swit.inner.graph import get_parent_file_content, get_parents_by_image
 
 
 def is_merge_possible(head_dir_path: Path) -> bool:

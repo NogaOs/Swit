@@ -3,7 +3,7 @@ from typing import Tuple
 
 from loguru import logger
 
-from common.paths import cwd
+from Swit.common.paths import cwd
 
 
 def create_init_files(repo_path: Path, sub_directory_names: Tuple[str, str]) -> None:
