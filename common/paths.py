@@ -27,16 +27,16 @@ def get_uppermost_dir(cwd: Path) -> Path:
 
 def get_repo_path(cwd: Path) -> Path:
     """Starting from the current working directory, moves up the tree until it finds a directory
-    containing a `.wit` directory. That dir shall be referenced to as the repository.
+    containing a `.swit` directory. That dir shall be referenced to as the repository.
     """
     uppermost_dir = get_uppermost_dir(cwd)
     while cwd != uppermost_dir:
-        for dir_name in cwd.glob("*.wit"):
+        for dir_name in cwd.glob("*.swit"):
             if dir_name:
                 return cwd
         cwd = cwd.parent
     raise WitDirectoryNotFoundError(
-        "No `.wit` directory found. Please make sure you're set to the correct cwd, or create a repository using the `init()` method."
+        "No `.swit` directory found. Please make sure you're set to the correct cwd, or create a repository using the `init()` method."
     )
 
 
@@ -51,7 +51,7 @@ if not is_init():
         exit()
 
 
-    wit_repo = repo / ".wit"
+    wit_repo = repo / ".swit"
 
     staging_area = wit_repo / "staging_area"
 

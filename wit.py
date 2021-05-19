@@ -15,23 +15,23 @@ from inner.status import status
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Wit is an open source version control system.",
-        epilog="Thank you for supporting wit! <3"
+        description="Swit is an open source version control system.",
+        epilog="Thank you for supporting swit! <3"
     )
     subparser = parser.add_subparsers(
-        dest="command", description="Wit commands:", required=True
+        dest="command", description="Swit commands:", required=True
     )
 
     # Init:
     _init = subparser.add_parser(
         "init",
-        description="Create a new wit repository.",
+        description="Create a new swit repository.",
     )
 
     # Add:
     _add = subparser.add_parser(
         "add",
-        description="Tells wit to include updates to a particular file or folder in the next commit.",
+        description="Tells swit to include updates to a particular file or folder in the next commit.",
     )
     _add.add_argument(
         "path", type=str, help="an absolute or relative path to a file or dir"
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # Status:
     _status = subparser.add_parser(
         "status",
-        description="Display the repository and the staging area. Shows which changes have been staged, which haven't, and which files aren't being tracked by wit.",
+        description="Display the repository and the staging area. Shows which changes have been staged, which haven't, and which files aren't being tracked by swit.",
     )
 
     # Checkout:

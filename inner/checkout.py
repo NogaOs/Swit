@@ -60,7 +60,7 @@ def get_dirpaths_to_ignore(untracked_files: Set[Path]) -> Set[Path]:
 
 def remove_except(untracked_files: Set[Path]) -> None:
     """Removes all dirs and files in the repository, 
-    except for `.wit` and untracked files (including parents).
+    except for `.swit` and untracked files (including parents).
     This is used before the content of `staging_area` is copied.
     """
     entries = get_relpaths(path_to.repo, ignore_wit=True, only_files=False)
@@ -76,7 +76,7 @@ def remove_except(untracked_files: Set[Path]) -> None:
 
 def update_repo(untracked_files: Set[Path], image_path: Path) -> None:
     """Replaces the content of the repository with the content of the chosen commit.
-    Removes all content except for .wit dir and untracked files;
+    Removes all content except for .swit dir and untracked files;
     then copies the content of the image.
     """
     remove_except(untracked_files)

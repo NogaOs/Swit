@@ -24,7 +24,7 @@ def get_relpaths(
     entries = set(p.rglob("*"))
     if ignore_wit:
         entries.remove(path_to.wit_repo)
-        entries = entries - set(p.rglob("*.wit/**/*"))
+        entries = entries - set(p.rglob("*.swit/**/*"))
 
     if only_files:
         return {x.relative_to(p) for x in entries if x.is_file()}
