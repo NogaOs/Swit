@@ -5,6 +5,7 @@ setup(
     name='Swit',
     packages=find_packages(where='Swit'),
     package_dir={"": "Swit"},
+    include_package_data=True,
     version='0.18',
     license='MIT',
     description='Swit is a basic open-source implementation of Git, meant for experimenting and studying Git\'s concepts and core design.',
@@ -28,7 +29,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
     ],
-    entry_points = {
+    entry_points={
         'console_scripts': ['Swit=Swit.Switter:main'],
     },
 )
