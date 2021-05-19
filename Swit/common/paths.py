@@ -5,7 +5,7 @@ from sys import argv, exit
 
 from loguru import logger
 
-from common.exceptions import WitDirectoryNotFoundError
+from Swit.common.exceptions import WitDirectoryNotFoundError
 
 
 def is_init() -> bool:  # TODO: is there a better way?

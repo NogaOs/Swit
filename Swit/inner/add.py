@@ -5,7 +5,7 @@ from typing import Tuple
 
 from loguru import logger
 
-import common.paths as paths
+import Swit.common.paths as paths
 
 
 def get_abs_path(path: str) -> Path:

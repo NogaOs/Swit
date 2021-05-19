@@ -3,15 +3,14 @@ import sys
 
 from loguru import logger
 
-from inner.add import add
-from inner.branch import branch
-from inner.checkout import checkout
-from inner.commit import commit
-from inner.graph import graph
-from inner.init import init
-from inner.merge import merge
-from inner.status import status
-
+from Swit.inner.add import add
+from Swit.inner.branch import branch
+from Swit.inner.checkout import checkout
+from Swit.inner.commit import commit
+from Swit.inner.graph import graph
+from Swit.inner.init import init
+from Swit.inner.merge import merge
+from Swit.inner.status import status
 
 parser = argparse.ArgumentParser(
     description="Swit is an open source version control system.",

@@ -2,15 +2,15 @@ import shutil
 from pathlib import Path
 from typing import List, Set, Tuple, Dict
 
-import common.paths as path_to
-from common.exceptions import CommitIdError, ImpossibleCheckoutError
-from common.helper_funcs import (
+import Swit.common.paths as path_to
+from Swit.common.exceptions import CommitIdError, ImpossibleCheckoutError
+from Swit.common.helper_funcs import (
     get_head_id, get_relpaths, handle_references_file
 )
 from loguru import logger
 
-import inner.status as status
-from common.helper_funcs import get_head_id, resolve_commit_id, get_valid_commit_path
+import Swit.inner.status as status
+from Swit.common.helper_funcs import get_head_id, resolve_commit_id, get_valid_commit_path
 
 
 def is_checkout_possible(

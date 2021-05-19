@@ -6,8 +6,8 @@ from filecmp import cmp
 from pathlib import Path
 from typing import List, Set, Tuple, Optional
 
-import common.paths as path_to
-from common.exceptions import CommitIdError, BranchNameExistsError
+import Swit.common.paths as path_to
+from Swit.common.exceptions import CommitIdError, BranchNameExistsError
 
 
 # Paths:
