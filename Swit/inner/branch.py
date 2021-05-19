@@ -1,4 +1,4 @@
-from common.exceptions import BranchNameExistsError, CommitRequiredError
+from Swit.common.exceptions import BranchNameExistsError, CommitRequiredError
 
 from loguru import logger
 

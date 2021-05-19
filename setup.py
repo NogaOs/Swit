@@ -1,9 +1,10 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 setup(
     name='Swit',
-    packages=['Swit'],
+    packages=find_packages(where='Swit'),
+    package_dir={"": "Swit"},
     version='0.16',
     license='MIT',
     description='Swit is a basic open-source implementation of Git, meant for experimenting and studying Git\'s concepts and core design.',
@@ -28,6 +29,6 @@ setup(
         'Programming Language :: Python :: 3.9',
     ],
     entry_points = {
-        'console_scripts': ['Swit=Swit.Swit:main'],
-    }
+        'console_scripts': ['Swit=Swit.Switter:main'],
+    },
 )
