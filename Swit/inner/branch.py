@@ -2,6 +2,9 @@ from Swit.common.exceptions import BranchNameExistsError, CommitRequiredError
 
 from loguru import logger
 
+import Swit.common.paths as path_to
+from Swit.common.helper_funcs import get_head_id
+
 
 def does_branch_exist(branch_name: str) -> bool:
     """Returns True if there's already a branch with the given name."""

@@ -3,16 +3,14 @@ from setuptools import find_packages, setup
 
 setup(
     name='Swit',
-    packages=find_packages(where='Swit'),
-    package_dir={"": "Swit"},
-    include_package_data=True,
-    version='0.2',
+    packages=find_packages(),
+    version='0.32',
     license='MIT',
     description='Swit is a basic open-source implementation of Git, meant for experimenting and studying Git\'s concepts and core design.',
     author='Noga Osin',
     author_email='nogaos97@gmail.com',
     url='https://github.com/NogaOs/Swit',
-    download_url='https://github.com/NogaOs/Swit/archive/refs/tags/v0.2.tar.gz',
+    download_url='https://github.com/NogaOs/Swit/archive/refs/tags/v0.32.tar.gz',
     keywords=['git', 'version control', 'source control'],
     install_requires=[
         'wheel',
