@@ -15,7 +15,7 @@ You're basically ready to go.
 ## How to Use Swit
 
 Even though you probably know this from Git, here's a short description of what Swit has to offer:
-* `Swit init`: Create a new swit repository.
+* `Swit init`: Create a new Swit repository.
 * `Swit add`: Tells Swit to include updates to a particular file or folder in the next commit.
 * `Swit commit`: Creates a snapshot of the repository.
   * Add a commit message with `--m` or `--message`.
