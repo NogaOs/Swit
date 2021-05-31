@@ -9,7 +9,7 @@ Install Swit using pip:
 ```bash
 pip install Swit
 ```
-You're basically ready to go. 
+And you're basically ready to go. 
 
 
 ## How to Use Swit
